@@ -12,13 +12,7 @@ export default class AuthMiddleware {
    */
   redirectTo = '/login'
 
-  async handle(
-    ctx: HttpContext,
-    next: NextFn,
-    options: {
-      guards?: string[]
-    } = {}
-  ) {
+  async handle(ctx: HttpContext, next: NextFn) {
     // Simple token-based auth for now
     const authHeader = ctx.request.header('authorization')
     if (!authHeader || !authHeader.startsWith('Bearer ')) {

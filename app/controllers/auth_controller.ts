@@ -54,7 +54,7 @@ export default class AuthController {
   }
 
   // POST /logout
-  async logout({ auth, response }: HttpContext) {
+  async logout({ response }: HttpContext) {
     try {
       // Simple logout - in production, invalidate token
       return response.ok({ message: 'Logged out successfully' })
@@ -64,9 +64,10 @@ export default class AuthController {
   }
 
   // GET /me
-  async me({ auth, response }: HttpContext) {
+  async me({ response }: HttpContext) {
     try {
-      const user = auth.user as any
+      // Get user from custom auth middleware
+      const user = (response.ctx as any).user
       if (user) {
         await user.load('roles')
       }
