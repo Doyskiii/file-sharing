@@ -8,14 +8,26 @@ export default class AuthController {
     try {
       const { email, password } = request.only(['email', 'password'])
 
-      // Simple password check for now (since User model doesn't have verifyCredentials)
       const user = await User.query().where('email', email).first()
-      if (!user || user.password !== password) {
+      if (!user) {
         return response.unauthorized({ message: 'Invalid credentials' })
       }
 
-      // Create a simple token (in production, use proper JWT)
+      // Check if user is active
+      if (!user.isActive) {
+        return response.unauthorized({ message: 'Account is not active' })
+      }
+
+      // Simple password check (password stored as plain text for now)
+      if (user.password !== password) {
+        return response.unauthorized({ message: 'Invalid credentials' })
+      }
+
+      // Create a simple token
       const token = `token_${user.id}_${Date.now()}`
+
+      // Load roles for response
+      await user.load('roles')
 
       return response.ok({
         message: 'Login successful',

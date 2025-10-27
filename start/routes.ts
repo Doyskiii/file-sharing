@@ -16,6 +16,8 @@ router.get('/', async () => {
   }
 })
 
+router.get('/user', '#controllers/user_controller.index')
+
 // Auth routes
 router
   .group(() => {

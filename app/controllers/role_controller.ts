@@ -82,9 +82,16 @@ export default class RoleController {
       if (!permission) {
         return response.notFound({ message: 'Permission not found' })
       }
+
+      // Cek apakah permission sudah di-assign
+      const existingPermission = await role.related('permissions').query().where('id', permissionId).first();
+      if (existingPermission) {
+        return response.status(400).send({ error: 'Permission already assigned to this role' });
+      }
+
       await role.related('permissions').attach([permissionId])
       await role.load('permissions')
-      return response.ok(role)
+      return response.ok({ message: 'Permission assigned successfully', role })
     } catch (error) {
       return response.internalServerError({ message: 'Failed to assign permission', error })
     }

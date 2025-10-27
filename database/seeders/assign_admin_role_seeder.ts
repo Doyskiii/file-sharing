@@ -18,8 +18,10 @@ export default class extends BaseSeeder {
       return
     }
 
-    // Assign Superadmin role to admin user
+    // Assign Superadmin role to admin user and activate account
     await adminUser.related('roles').sync([superadminRole.id])
-    console.log('Assigned Superadmin role to admin user')
+    adminUser.isActive = true
+    await adminUser.save()
+    console.log('Assigned Superadmin role to admin user and activated account')
   }
 }
