@@ -1,0 +1,8 @@
+services:
+  backend:
+    build: ./backend
+    container_name: file-sharing-backend
+    ports:
+      - "3333:3333"
+    env_file:
+      - ./backend/.env

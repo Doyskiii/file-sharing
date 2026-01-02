@@ -1,0 +1,3 @@
+[submodule "file-sharing/backend"]
+	path = file-sharing/backend
+	url = https://github.com/Doyskiii/republikorp-be.git
