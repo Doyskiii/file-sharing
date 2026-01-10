@@ -11,7 +11,7 @@ const dbConfig = defineConfig({
         port: env.get('PG_PORT'),
         user: env.get('PG_USER'),
         password: env.get('PG_PASSWORD'),
-        database: env.get('DB_DATABASE', 'arsip_new'),
+        database: env.get('PG_DB_NAME', 'db_magang'),
       },
       migrations: {
         naturalSort: true,

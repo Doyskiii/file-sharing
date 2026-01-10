@@ -18,15 +18,11 @@ router.get('/', async () => {
 
 router.get('/user', '#controllers/user_controller.index')
 
-// Auth routes
-router
-  .group(() => {
-    router.post('/register', '#controllers/auth_controller.register')
-    router.post('/login', '#controllers/auth_controller.login')
-    router.post('/logout', '#controllers/auth_controller.logout').use(middleware.auth())
-    router.get('/me', '#controllers/auth_controller.me').use(middleware.auth())
-  })
-  .prefix('/auth')
+// Auth routes tanpa prefix
+router.post('/register', '#controllers/auth_controller.register')
+router.post('/login', '#controllers/auth_controller.login')
+router.post('/logout', '#controllers/auth_controller.logout').use(middleware.auth())
+router.get('/me', '#controllers/auth_controller.me').use(middleware.auth())
 
 // User routes
 router
@@ -36,7 +32,9 @@ router
     router.get('/users/:id', '#controllers/user_controller.show')
     router.put('/users/:id', '#controllers/user_controller.update')
     router.delete('/users/:id', '#controllers/user_controller.destroy')
-    router.post('/users/:id/assign-role', '#controllers/user_controller.assignRole').use(middleware.can({ permission: 'user:assign-role' }))
+    router.post('/users/:id/assign-role', '#controllers/user_controller.assignRole').use(
+      middleware.can({ permission: 'user:assign-role' })
+    )
   })
   .use([middleware.auth(), middleware.is({ role: 'Superadmin' })])
 

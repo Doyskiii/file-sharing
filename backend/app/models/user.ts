@@ -1,5 +1,7 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column, hasMany, manyToMany } from '@adonisjs/lucid/orm'
+import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
+import hash from '@adonisjs/core/services/hash'
 import type { HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
 
 import Role from './role.js'
@@ -10,7 +12,12 @@ import Activity from './activity.js'
 import FileShare from './file_share.js'
 import FileKey from './file_key.js'
 
-export default class User extends BaseModel {
+const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
+  uids: ['email'],
+  passwordColumnName: 'password',
+})
+
+export default class User extends AuthFinder(BaseModel) {
   @column({ isPrimary: true })
   declare id: number
 
@@ -20,14 +27,13 @@ export default class User extends BaseModel {
   @column()
   declare email: string
 
-  @column({ serializeAs: null }) // Sembunyikan password dari output JSON
+  @column({ serializeAs: null })
   declare password: string
 
   @column()
   declare isActive: boolean
 
-  @column({ serializeAs: null }) // Sembunyikan juga secret key
-
+  @column({ serializeAs: null })
   declare totpSecret: string | null
 
   @column()
@@ -59,16 +65,10 @@ export default class User extends BaseModel {
   @hasMany(() => Activity)
   declare activities: HasMany<typeof Activity>
 
-  // Daftar file yang dibagikan OLEH user ini
-  @hasMany(() => FileShare, {
-    foreignKey: 'ownerId',
-  })
+  @hasMany(() => FileShare, { foreignKey: 'ownerId' })
   declare ownedShares: HasMany<typeof FileShare>
 
-  // Daftar file yang dibagikan KEPADA user ini
-  @hasMany(() => FileShare, {
-    foreignKey: 'sharedWithId',
-  })
+  @hasMany(() => FileShare, { foreignKey: 'sharedWithId' })
   declare receivedShares: HasMany<typeof FileShare>
 
   @hasMany(() => FileKey)
