@@ -14,7 +14,7 @@ export default class extends BaseSeeder {
       {
         username: 'user',
         email: 'user@mail.com',
-        password: 'user123',
+        password: 'user1234',
         roleName: 'User',
       },
     ]

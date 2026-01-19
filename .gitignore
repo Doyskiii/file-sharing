@@ -23,3 +23,14 @@ yarn-error.log
 
 # Platform specific
 .DS_Store
+
+# Upload & runtime files
+backend/uploads/
+*.txt
+
+# Logs
+*.log
+
+# Env
+.env
+.env.*

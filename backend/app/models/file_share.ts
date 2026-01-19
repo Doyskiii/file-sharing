@@ -32,6 +32,9 @@ export default class FileShare extends BaseModel {
   @column.dateTime()
   declare expiredAt: DateTime | null
 
+  @column()
+  declare encryptedKeyForRecipient: string | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
@@ -39,7 +42,9 @@ export default class FileShare extends BaseModel {
   declare updatedAt: DateTime
 
   // ===== RELATION =====
-  @belongsTo(() => File)
+  @belongsTo(() => File, {
+    foreignKey: 'fileId',
+  })
   declare file: BelongsTo<typeof File>
 
   // Relasi untuk pemilik share

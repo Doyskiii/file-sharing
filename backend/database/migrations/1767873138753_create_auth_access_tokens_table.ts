@@ -12,11 +12,7 @@ export default class extends BaseSchema {
       table.string('hash').notNullable()
       table.text('abilities').notNullable()
       table.timestamp('created_at')
-/*************  ✨ Windsurf Command ⭐  *************/
-  /**
-   * Drops the auth_access_tokens table.
-   */
-/*******  d3e30d41-7d5d-4961-a804-7eda769d2ebc  *******/      table.timestamp('updated_at')
+      table.timestamp('updated_at')
       table.timestamp('last_used_at').nullable()
       table.timestamp('expires_at').nullable()
     })

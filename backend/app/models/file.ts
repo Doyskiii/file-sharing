@@ -39,6 +39,9 @@ export default class File extends BaseModel {
   @column()
   declare encryptionMethod: string | null
 
+  @column()
+  declare encryptionKey: string | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
@@ -46,11 +49,15 @@ export default class File extends BaseModel {
   declare updatedAt: DateTime
 
   // ===== RELATION =====
-  @belongsTo(() => User)
+  @belongsTo(() => User, {
+    foreignKey: 'ownerId',
+  })
   declare owner: BelongsTo<typeof User>
 
-  @belongsTo(() => Folder)
-  declare folders: BelongsTo<typeof Folder>
+  @belongsTo(() => Folder, {
+    foreignKey: 'folderId',
+  })
+  declare folder: BelongsTo<typeof Folder>
 
   @hasMany(() => Activity)
   declare activities: HasMany<typeof Activity>

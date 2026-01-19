@@ -4,8 +4,48 @@ import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 
 import User from './user.js'
 import File from './file.js'
+import Folder from './folder.js'
 
-export type ActivityAction = 'upload' | 'download' | 'share' | 'delete' | 'update' | 'login'
+export type ActivityAction =
+  // Auth activities
+  | 'auth:login'
+  | 'auth:logout'
+  | 'auth:register'
+  // File activities
+  | 'file:upload'
+  | 'file:download'
+  | 'file:update'
+  | 'file:delete'
+  | 'file:view'
+  | 'file:encrypt'
+  | 'file:decrypt'
+  // Folder activities
+  | 'folder:create'
+  | 'folder:update'
+  | 'folder:delete'
+  | 'folder:view'
+  // Share activities
+  | 'share:create'
+  | 'share:update'
+  | 'share:delete'
+  | 'share:access'
+  | 'share:download'
+  // Key activities
+  | 'key:share'
+  // User activities
+  | 'user:create'
+  | 'user:update'
+  | 'user:delete'
+  // Role activities
+  | 'role:assign'
+  | 'role:revoke'
+  // Legacy (for backward compatibility)
+  | 'upload'
+  | 'download'
+  | 'share'
+  | 'delete'
+  | 'update'
+  | 'login'
 
 export default class Activity extends BaseModel {
   public static updatedAt = null
@@ -20,6 +60,9 @@ export default class Activity extends BaseModel {
   declare fileId: number | null
 
   @column()
+  declare folderId: number | null
+
+  @column()
   declare action: ActivityAction
 
   @column()
@@ -28,13 +71,28 @@ export default class Activity extends BaseModel {
   @column()
   declare userAgent: string | null
 
+  @column({
+    prepare: (value: Record<string, any> | null) => (value ? JSON.stringify(value) : null),
+    consume: (value: string | null) => (value ? JSON.parse(value) : null),
+  })
+  declare metadata: Record<string, any> | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
   // ===== RELATION =====
-  @belongsTo(() => User)
+  @belongsTo(() => User, {
+    foreignKey: 'userId',
+  })
   declare user: BelongsTo<typeof User>
 
-  @belongsTo(() => File)
+  @belongsTo(() => File, {
+    foreignKey: 'fileId',
+  })
   declare file: BelongsTo<typeof File>
+
+  @belongsTo(() => Folder, {
+    foreignKey: 'folderId',
+  })
+  declare folder: BelongsTo<typeof Folder>
 }

@@ -13,7 +13,7 @@ export default class PermissionMiddleware {
       permission: string
     }
   ) {
-    const user = (ctx as any).user as User
+    const user = ctx.auth.user
 
     if (!user) {
       return ctx.response.unauthorized({ message: 'Authentication required' })

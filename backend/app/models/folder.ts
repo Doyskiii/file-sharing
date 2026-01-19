@@ -12,10 +12,10 @@ export default class Folder extends BaseModel {
   declare name: string
 
   @column()
-  declare ownerId: string
+  declare ownerId: number
 
   @column()
-  declare parentId: string | null
+  declare parentId: number | null
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

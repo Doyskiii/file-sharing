@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column, hasMany, manyToMany } from '@adonisjs/lucid/orm'
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
+import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import hash from '@adonisjs/core/services/hash'
 import type { HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
 
@@ -18,6 +19,8 @@ const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
 })
 
 export default class User extends AuthFinder(BaseModel) {
+  static accessTokens = DbAccessTokensProvider.forModel(User)
+
   @column({ isPrimary: true })
   declare id: number
 
