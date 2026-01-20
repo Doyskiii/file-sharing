@@ -1,0 +1,217 @@
+pipeline {
+    agent any
+
+    environment {
+        // Git repository details
+        GIT_URL = 'ssh://gitgras@192.168.4.125/volume1/git/dpt/republik/republikorp-fe.git'
+
+        // Node.js and commands
+        NODE_VERSION = '22.18.0'
+        INSTALL_COMMAND = 'npm install'
+        BUILD_COMMAND = 'npm run build'
+        TEST_COMMAND = 'npm run test'
+
+        // Production server details
+        PROD_SERVER = 'republik@192.168.4.28'
+        PROD_PATH = '/var/www/html/republik/prod/republikorp-fe'
+        RELEASES_PATH = '/var/www/html/republik/releases/republikorp-fe'
+        PM2_APP_NAME = 'republikorp-fe'
+
+        // Jenkins credentials (must exist in Jenkins)
+        SSH_CREDENTIALS = 'ssh-private-key'
+        GIT_CREDENTIALS = 'gitgras-key'
+
+        // Retention
+        KEEP_RELEASES = 5
+
+        // nvm and pm2 paths
+        NVM_DIR = '/home/republik/.nvm'
+        PM2_SOURCE = '/home/republik/.nvm/versions/node/v22.18.0/bin'
+    }
+
+    stages {
+
+        stage('Init Variables') {
+            steps {
+                script {
+                    def dateTag = sh(script: 'date +%Y%m%d-%H%M%S', returnStdout: true).trim()
+                    def branch = env.BRANCH_NAME ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                    env.APP_VERSION = "v${env.BUILD_NUMBER}-${branch.replace('/', '-')}-${dateTag}"
+                    echo "Generated APP_VERSION: ${env.APP_VERSION}"
+                }
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+                echo "Checking out code for ${env.APP_VERSION}..."
+                git branch: 'master',
+                    url: "${env.GIT_URL}",
+                    credentialsId: "${env.GIT_CREDENTIALS}"
+            }
+        }
+
+        stage('Setup Node.js Environment') {
+            steps {
+                echo "Setting up Node.js..."
+                script {
+                    def nodeHome = tool name: 'node22', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'
+                    env.PATH = "${nodeHome}/bin:${env.PATH}"
+                }
+                sh '''
+                    node -v
+                    npm -v
+                '''
+           }
+        }
+
+        stage('Install Dependencies & Prepare .env') {
+            steps {
+                echo 'Installing dependencies...'
+                sh "${INSTALL_COMMAND}"
+                echo 'Applying production environment variables from Jenkins Credentials...'
+                withCredentials([file(credentialsId: 'republikorp-fe-env', variable: 'PROD_ENV_FILE')]) {
+                    sh '''
+                        chmod u+rw .
+                        rm -f .env
+                        cp "$PROD_ENV_FILE" .env
+                    '''
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Building app...'
+                sh "${BUILD_COMMAND}"
+            }
+        }
+
+        stage('Synchronize to Development Server') {
+            steps {
+                script {
+                    sshagent([SSH_CREDENTIALS]) {
+                        echo "Synchronize ${APP_VERSION}..."
+                        sh """
+                            # Create release directory and sync files
+                            ssh ${PROD_SERVER} 'mkdir -p ${RELEASES_PATH}/${APP_VERSION}'
+                            rsync -av --exclude=node_modules --exclude=.next ./ ${PROD_SERVER}:${RELEASES_PATH}/${APP_VERSION}/
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Create Symlink to New Release') {
+            steps {
+                script {
+                    sshagent([SSH_CREDENTIALS]) {
+                        echo "🔗 Creating symlink for ${APP_VERSION}..."
+                        sh """
+                            ssh ${PROD_SERVER} '
+                                ln -sfn ${RELEASES_PATH}/${APP_VERSION} ${PROD_PATH}
+                                echo "Symlink updated -> ${PROD_PATH} -> ${RELEASES_PATH}/${APP_VERSION}"
+                                ls -l ${PROD_PATH}
+                            '
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Install Dependencies & Build on Server') {
+            steps {
+                script {
+                    sshagent([SSH_CREDENTIALS]) {
+                        echo "📦 Installing dependencies and building app on server..."
+                        sh """
+                            ssh ${PROD_SERVER} '
+                                export NVM_DIR="${NVM_DIR}"
+                                [ -s "\$NVM_DIR/nvm.sh" ] && source "\$NVM_DIR/nvm.sh"
+                                cd ${PROD_PATH}
+                                ${PM2_SOURCE}/npm install
+                                ${PM2_SOURCE}/npm run build
+                            '
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Restart Application via PM2') {
+            steps {
+                script {
+                    sshagent([SSH_CREDENTIALS]) {
+                        echo "🚀 Restarting PM2 application..."
+                        sh """
+                            ssh ${PROD_SERVER} '
+                                export NVM_DIR="${NVM_DIR}"
+                                [ -s "\$NVM_DIR/nvm.sh" ] && source "\$NVM_DIR/nvm.sh"
+                                cd ${PROD_PATH}
+                                ${PM2_SOURCE}/pm2 delete ${PM2_APP_NAME} || true
+                                ${PM2_SOURCE}/pm2 startOrReload ecosystem.config.js
+                                ${PM2_SOURCE}/pm2 save
+                            '
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Cleanup Old Releases') {
+            steps {
+                script {
+                    sshagent([SSH_CREDENTIALS]) {
+                        echo "🧹 Cleaning up old releases (keeping last ${KEEP_RELEASES})..."
+                        sh """
+                            ssh ${PROD_SERVER} '
+                                cd ${RELEASES_PATH}
+                                ls -t | tail -n +\$(expr ${KEEP_RELEASES} + 1) | xargs -r rm -rf
+                            '
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            script {
+                sshagent([SSH_CREDENTIALS]) {
+                    echo "⚠️ Deployment failed! Rolling back to previous release..."
+                    sh """
+                        ssh ${PROD_SERVER} '
+                            export NVM_DIR="${NVM_DIR}"
+                            [ -s "\$NVM_DIR/nvm.sh" ] && source "\$NVM_DIR/nvm.sh"
+
+                            # Cari release sebelumnya
+                            PREV_RELEASE=\$(ls -t ${RELEASES_PATH} | sed -n 2p)
+                            if [ -n "\$PREV_RELEASE" ]; then
+                                echo "Rolling back to: \$PREV_RELEASE"
+                                ln -sfn ${RELEASES_PATH}/\$PREV_RELEASE ${PROD_PATH}
+
+                                # Restart ulang PM2 dengan versi sebelumnya
+                                cd ${PROD_PATH}
+                                ${PM2_SOURCE}/pm2 delete ${PM2_APP_NAME} || true
+                                ${PM2_SOURCE}/pm2 startOrReload ecosystem.config.js
+                                ${PM2_SOURCE}/pm2 save
+                            else
+                                echo "❌ No previous release to roll back to."
+                            fi
+                        '
+                    """
+                }
+            }
+        }
+
+        success {
+            echo "✅ Deployment of ${env.APP_VERSION} completed successfully!"
+        }
+    }
+}
+
+
+
+
+
