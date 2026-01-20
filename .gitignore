@@ -1,36 +1,55 @@
-# Dependencies and AdonisJS build
-node_modules
-build
-tmp
+# ===============================
+# Node.js dependencies (ALL)
+# ===============================
+node_modules/
+**/node_modules/
 
-# Secrets
-.env
-.env.local
-.env.production.local
-.env.development.local
+# ===============================
+# Build outputs
+# ===============================
+build/
+dist/
+.next/
+out/
+tmp/
+**/build/
+**/dist/
+**/tmp/
 
-# Frontend assets compiled code
-public/assets
-
-# Build tools specific
-npm-debug.log
-yarn-error.log
-
-# Editors specific
-.fleet
-.idea
-.vscode
-
-# Platform specific
-.DS_Store
-
-# Upload & runtime files
-backend/uploads/
-*.txt
-
-# Logs
-*.log
-
-# Env
+# ===============================
+# Environment variables (SECRETS)
+# ===============================
 .env
 .env.*
+!.env.example
+
+# ===============================
+# Logs
+# ===============================
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# ===============================
+# OS / Editor files
+# ===============================
+.DS_Store
+.vscode/
+.idea/
+.fleet/
+
+# ===============================
+# Frontend compiled assets
+# ===============================
+public/assets/
+
+# ===============================
+# Backend runtime uploads
+# ===============================
+backend/uploads/
+
+# ===============================
+# Test / runtime artifacts (specific)
+# ===============================
+token*.txt
+test-*.txt
