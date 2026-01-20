@@ -4,7 +4,6 @@ import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 
 import User from './user.js'
 import File from './file.js'
-import Folder from './folder.js'
 
 export type ActivityAction =
   // Auth activities
@@ -60,9 +59,6 @@ export default class Activity extends BaseModel {
   declare fileId: number | null
 
   @column()
-  declare folderId: number | null
-
-  @column()
   declare action: ActivityAction
 
   @column()
@@ -70,12 +66,6 @@ export default class Activity extends BaseModel {
 
   @column()
   declare userAgent: string | null
-
-  @column({
-    prepare: (value: Record<string, any> | null) => (value ? JSON.stringify(value) : null),
-    consume: (value: string | null) => (value ? JSON.parse(value) : null),
-  })
-  declare metadata: Record<string, any> | null
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -90,9 +80,4 @@ export default class Activity extends BaseModel {
     foreignKey: 'fileId',
   })
   declare file: BelongsTo<typeof File>
-
-  @belongsTo(() => Folder, {
-    foreignKey: 'folderId',
-  })
-  declare folder: BelongsTo<typeof Folder>
 }
