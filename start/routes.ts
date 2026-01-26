@@ -36,7 +36,9 @@ router
     router.get('/users/:id', '#controllers/user_controller.show')
     router.put('/users/:id', '#controllers/user_controller.update')
     router.delete('/users/:id', '#controllers/user_controller.destroy')
-    router.post('/users/:id/assign-role', '#controllers/user_controller.assignRole').use(middleware.can({ permission: 'user:assign-role' }))
+    router
+      .post('/users/:id/assign-role', '#controllers/user_controller.assignRole')
+      .use(middleware.can({ permission: 'user:assign-role' }))
   })
   .use([middleware.auth(), middleware.is({ role: 'Superadmin' })])
 
