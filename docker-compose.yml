@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: file-sharing-db
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: db_magang
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - file-sharing-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: file-sharing-app
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      TZ: UTC
+      PORT: 3000
+      HOST: 0.0.0.0
+      LOG_LEVEL: info
+      APP_KEY: ${APP_KEY:-pWfDjtvjhlHD3NshauMIkWkd8LQLXuUd}
+      NODE_ENV: production
+      DB_CONNECTION: pg
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_USER: postgres
+      PG_PASSWORD: postgres
+      PG_DB_NAME: db_magang
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - file-sharing-network
+    volumes:
+      - ./uploads:/app/uploads
+      - ./storage:/app/storage
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  file-sharing-network:
+    driver: bridge

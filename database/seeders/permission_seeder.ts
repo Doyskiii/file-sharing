@@ -13,12 +13,12 @@ export default class extends BaseSeeder {
       { name: 'role:delete', description: 'Delete roles' },
       { name: 'role:assign-permission', description: 'Assign permissions to roles' },
       { name: 'permission:view', description: 'View permissions' },
-    ];
+    ]
 
     for (const data of permissionData) {
-      let permission = await Permission.query().where('name', data.name).first();
+      let permission = await Permission.query().where('name', data.name).first()
       if (!permission) {
-        await Permission.create(data);
+        await Permission.create(data)
       }
     }
   }

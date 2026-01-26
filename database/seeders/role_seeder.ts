@@ -14,24 +14,24 @@ export default class extends BaseSeeder {
       { name: 'Tata Usaha', description: 'tata usaha' },
       { name: 'User', description: 'user' },
       { name: 'Superadmin', description: 'superadmin' },
-    ];
+    ]
 
-    const roles = [];
+    const roles = []
     for (const data of roleData) {
-      let role = await Role.query().where('name', data.name).first();
+      let role = await Role.query().where('name', data.name).first()
       if (!role) {
-        role = await Role.create(data);
+        role = await Role.create(data)
       }
-      roles.push(role);
+      roles.push(role)
     }
 
     // Fetch permissions
     const permissions = await Permission.all()
 
     // Assign permissions to Superadmin role
-    const superadminRole = roles.find(role => role.name === 'Superadmin')
+    const superadminRole = roles.find((role) => role.name === 'Superadmin')
     if (superadminRole) {
-      await superadminRole.related('permissions').sync(permissions.map(p => p.id))
+      await superadminRole.related('permissions').sync(permissions.map((p) => p.id))
     }
 
     // Assign basic permissions to other roles as needed
