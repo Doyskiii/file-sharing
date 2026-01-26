@@ -10,26 +10,26 @@ export default class extends BaseSeeder {
         username: 'Superadmin',
         email: 'Superadmin@example.com',
         password: 'Superadmin123',
-        roleName: 'Superadmin'
+        roleName: 'Superadmin',
       },
       {
         username: 'Admin',
         email: 'Admin@example.com',
         password: 'Admin123',
-        roleName: 'Administration'
+        roleName: 'Administration',
       },
       {
         username: 'KetuaTeam',
         email: 'KetuaTeam@example.com',
         password: 'KetuaTeam123',
-        roleName: 'Project Manager'
+        roleName: 'Project Manager',
       },
       {
         username: 'User',
         email: 'User@example.com',
         password: 'User1234',
-        roleName: 'User'
-      }
+        roleName: 'User',
+      },
     ]
 
     for (const userData of usersData) {

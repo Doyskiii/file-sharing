@@ -28,8 +28,8 @@ export default class UserController {
   // GET user by id
   async show({ params, response }: HttpContext) {
     try {
-      const userId = parseInt(params.id)
-      if (isNaN(userId)) {
+      const userId = Number.parseInt(params.id)
+      if (Number.isNaN(userId)) {
         return response.badRequest({ message: 'Invalid user ID' })
       }
       const user = await User.query().where('id', userId).preload('roles').first()
@@ -45,8 +45,8 @@ export default class UserController {
   // PUT user by id
   async update({ params, request, response }: HttpContext) {
     try {
-      const userId = parseInt(params.id)
-      if (isNaN(userId)) {
+      const userId = Number.parseInt(params.id)
+      if (Number.isNaN(userId)) {
         return response.badRequest({ message: 'Invalid user ID' })
       }
       const user = await User.find(userId)
@@ -67,8 +67,8 @@ export default class UserController {
   // DELETE user by id (optional)
   async destroy({ params, response }: HttpContext) {
     try {
-      const userId = parseInt(params.id)
-      if (isNaN(userId)) {
+      const userId = Number.parseInt(params.id)
+      if (Number.isNaN(userId)) {
         return response.badRequest({ message: 'Invalid user ID' })
       }
       const user = await User.find(userId)
@@ -85,35 +85,37 @@ export default class UserController {
   // POST assign role for user by id
   async assignRole({ params, request, response }: HttpContext) {
     try {
-      const userId = parseInt(params.id)
-      if (isNaN(userId)) {
+      const userId = Number.parseInt(params.id)
+      if (Number.isNaN(userId)) {
         return response.badRequest({ message: 'Invalid user ID' })
       }
-      const { roleId } = request.only(['roleId']);
+      const { roleId } = request.only(['roleId'])
 
       // Validasi: Pastikan user dan role ada
-      const user = await User.find(userId);
-      const role = await Role.find(roleId);
+      const user = await User.find(userId)
+      const role = await Role.find(roleId)
       if (!user || !role) {
-        return response.status(404).send({ error: 'User or Role not found' });
+        return response.status(404).send({ error: 'User or Role not found' })
       }
 
       // Cek apakah role sudah di-assign
-      const existingRole = await user.related('roles').query().where('id', roleId).first();
+      const existingRole = await user.related('roles').query().where('id', roleId).first()
       if (existingRole) {
-        return response.status(400).send({ error: 'Role already assigned to this user' });
+        return response.status(400).send({ error: 'Role already assigned to this user' })
       }
 
       // Simpan relasi dengan attach melalui relasi manyToMany
-      await user.related('roles').attach([roleId]);
+      await user.related('roles').attach([roleId])
 
       // Preload roles on user before returning
-      await user.load('roles');
+      await user.load('roles')
 
       // Return response
-      return response.status(200).send({ message: 'Role assigned successfully', user: user, role: role });
+      return response
+        .status(200)
+        .send({ message: 'Role assigned successfully', user: user, role: role })
     } catch (error) {
-      return response.internalServerError({ message: 'Failed to assign role', error });
+      return response.internalServerError({ message: 'Failed to assign role', error })
     }
   }
 }

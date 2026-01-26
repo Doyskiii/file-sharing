@@ -27,7 +27,6 @@ export default class User extends BaseModel {
   declare isActive: boolean
 
   @column({ serializeAs: null }) // Sembunyikan juga secret key
-
   declare totpSecret: string | null
 
   @column()

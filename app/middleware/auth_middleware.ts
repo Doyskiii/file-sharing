@@ -30,7 +30,7 @@ export default class AuthMiddleware {
       return ctx.response.unauthorized({ message: 'Invalid token format' })
     }
 
-    const userId = parseInt(parts[1])
+    const userId = Number.parseInt(parts[1])
     const user = await User.find(userId)
     if (!user) {
       return ctx.response.unauthorized({ message: 'User not found' })

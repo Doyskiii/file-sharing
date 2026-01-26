@@ -24,12 +24,14 @@ export default class PermissionMiddleware {
       await role.load('permissions')
     }
 
-    const hasPermission = user.roles.some(role =>
+    const hasPermission = user.roles.some((role) =>
       role.permissions?.some((permission: any) => permission.name === options.permission)
     )
 
     if (!hasPermission) {
-      return ctx.response.forbidden({ message: `Access denied. Required permission: ${options.permission}` })
+      return ctx.response.forbidden({
+        message: `Access denied. Required permission: ${options.permission}`,
+      })
     }
 
     return next()
