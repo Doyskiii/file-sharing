@@ -19,18 +19,99 @@ export default class ActivityController {
         ? new Date(request.input('startDate'))
         : undefined
       const endDate = request.input('endDate') ? new Date(request.input('endDate')) : undefined
+      const search = request.input('search')
+      const entityType = request.input('entityType')
 
+      // For now, we'll get all activities and filter client-side since the service doesn't support search/entityType
+      // TODO: Update ActivityService to support search and entityType filtering
       const activities = await ActivityService.getAllActivities({
-        limit,
-        offset,
+        limit: search || entityType ? 1000 : limit, // Get more if filtering
+        offset: search || entityType ? 0 : offset,
         action,
         userId,
         startDate,
         endDate,
       })
 
+      // Apply client-side filtering if needed
+      let filteredActivities = activities
+      if (search) {
+        const searchLower = search.toLowerCase()
+        filteredActivities = filteredActivities.filter(activity =>
+          activity.user.username.toLowerCase().includes(searchLower) ||
+          activity.action.toLowerCase().includes(searchLower) ||
+          (activity.metadata && JSON.stringify(activity.metadata).toLowerCase().includes(searchLower))
+        )
+      }
+
+      if (entityType) {
+        filteredActivities = filteredActivities.filter(activity => {
+          if (entityType === 'file') return activity.fileId !== null
+          if (entityType === 'folder') return activity.folderId !== null
+          if (entityType === 'user') return !activity.fileId && !activity.folderId
+          return true
+        })
+      }
+
+      // Apply pagination after filtering
+      const paginatedActivities = (search || entityType) ?
+        filteredActivities.slice(offset, offset + limit) : filteredActivities
+
+      // Transform activities to include entityType and details for frontend compatibility
+      const transformedActivities = paginatedActivities.map(activity => {
+        let entityType = 'unknown'
+        let entityId = null
+        let details = activity.metadata || null
+
+        if (activity.fileId) {
+          entityType = 'file'
+          entityId = activity.fileId
+          // Merge metadata with file data
+          if (activity.file) {
+            details = {
+              ...details,
+              id: activity.file.id,
+              originalName: activity.file.originalName,
+              mimeType: activity.file.mimeType,
+              size: activity.file.size,
+            }
+          }
+        } else if (activity.folderId) {
+          entityType = 'folder'
+          entityId = activity.folderId
+          // Merge metadata with folder data
+          if (activity.folder) {
+            details = {
+              ...details,
+              id: activity.folder.id,
+              name: activity.folder.name,
+            }
+          }
+        } else {
+          // For user-related activities
+          entityType = 'user'
+          entityId = activity.userId
+        }
+
+        return {
+          id: activity.id,
+          action: activity.action,
+          entityType,
+          entityId,
+          details,
+          ipAddress: activity.ipAddress,
+          userAgent: activity.userAgent,
+          createdAt: activity.createdAt.toISO(),
+          user: {
+            id: activity.user.id,
+            username: activity.user.username,
+            email: activity.user.email,
+          },
+        }
+      })
+
       return response.ok({
-        data: activities,
+        data: transformedActivities,
         meta: {
           page,
           limit,

@@ -77,6 +77,7 @@ export default function AdminUsersPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -84,6 +85,7 @@ export default function AdminUsersPage() {
     email: '',
     password: '',
     roleId: '',
+    isActive: true,
   });
 
   useEffect(() => {
@@ -94,7 +96,7 @@ export default function AdminUsersPage() {
   const fetchUsers = async () => {
     try {
       const response = await api.get('/users');
-      setUsers(response.data.data || []);
+      setUsers(response.data || []);
     } catch (error) {
       toast.error('Failed to load users');
     } finally {
@@ -105,7 +107,7 @@ export default function AdminUsersPage() {
   const fetchRoles = async () => {
     try {
       const response = await api.get('/roles');
-      setRoles(response.data.data || []);
+      setRoles(response.data || []);
     } catch (error) {
       toast.error('Failed to load roles');
     }
@@ -125,13 +127,12 @@ export default function AdminUsersPage() {
       if (formData.roleId) {
         // Get the newly created user
         const usersResponse = await api.get('/users');
-        const newUser = usersResponse.data.data.find((u: User) =>
+        const newUser = usersResponse.data.find((u: User) =>
           u.email === formData.email
         );
 
         if (newUser) {
-          await api.post('/users/assign-role', {
-            userId: newUser.id,
+          await api.post(`/users/${newUser.id}/roles`, {
             roleId: parseInt(formData.roleId),
           });
         }
@@ -150,12 +151,29 @@ export default function AdminUsersPage() {
     e.preventDefault();
     if (!selectedUser) return;
 
+    setEditLoading(true);
     try {
       await api.put(`/users/${selectedUser.id}`, {
         username: formData.username,
         email: formData.email,
-        isActive: formData.isActive,
       });
+
+      // Handle role change
+      const currentRoleId = selectedUser.roles.length > 0 ? selectedUser.roles[0].id : null;
+      const newRoleId = formData.roleId ? parseInt(formData.roleId) : null;
+
+      if (currentRoleId !== newRoleId) {
+        // Remove current role if exists
+        if (currentRoleId) {
+          await api.delete(`/users/${selectedUser.id}/roles/${currentRoleId}`);
+        }
+        // Assign new role if selected
+        if (newRoleId) {
+          await api.post(`/users/${selectedUser.id}/roles`, {
+            roleId: newRoleId,
+          });
+        }
+      }
 
       toast.success('User updated successfully');
       setEditDialogOpen(false);
@@ -164,6 +182,8 @@ export default function AdminUsersPage() {
       fetchUsers();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update user');
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -181,8 +201,7 @@ export default function AdminUsersPage() {
 
   const handleAssignRole = async (userId: number, roleId: string) => {
     try {
-      await api.post('/users/assign-role', {
-        userId,
+      await api.post(`/users/${userId}/roles`, {
         roleId: parseInt(roleId),
       });
       toast.success('Role assigned successfully');
@@ -208,6 +227,7 @@ export default function AdminUsersPage() {
       email: '',
       password: '',
       roleId: '',
+      isActive: true,
     });
   };
 
@@ -217,7 +237,8 @@ export default function AdminUsersPage() {
       username: user.username,
       email: user.email,
       password: '',
-      roleId: '',
+      roleId: user.roles.length > 0 ? user.roles[0].id.toString() : '',
+      isActive: user.isActive,
     });
     setEditDialogOpen(true);
   };
@@ -493,12 +514,29 @@ export default function AdminUsersPage() {
                   required
                 />
               </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-role" className="text-zinc-300">Role</Label>
+                <Select value={formData.roleId} onValueChange={(value) => setFormData({...formData, roleId: value})}>
+                  <SelectTrigger className="bg-zinc-800 border-zinc-600">
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-800 border-zinc-600">
+                    {roles.map((role) => (
+                      <SelectItem key={role.id} value={role.id.toString()}>
+                        {role.name} - {role.description}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit">Update User</Button>
+              <Button type="submit" disabled={editLoading}>
+                {editLoading ? 'Updating...' : 'Update User'}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

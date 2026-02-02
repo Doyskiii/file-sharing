@@ -64,6 +64,18 @@ export default function AllActivitiesPage() {
     fetchActivities();
   }, [searchTerm, actionFilter, entityFilter, currentPage]);
 
+  // Polling for real-time updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Only poll if no search term and no filters, to avoid interrupting user interaction
+      if (!searchTerm && actionFilter === 'all' && entityFilter === 'all' && currentPage === 1) {
+        fetchActivities();
+      }
+    }, 10000); // Poll every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [searchTerm, actionFilter, entityFilter, currentPage]);
+
   const fetchActivities = async () => {
     try {
       setLoading(true);

@@ -3,7 +3,7 @@ import { defineConfig } from '@adonisjs/lucid'
 import { join } from 'node:path'
 
 const dbConfig = defineConfig({
-  connection: env.get('DB_CONNECTION', 'sqlite'),
+  connection: env.get('DB_CONNECTION', 'pg'),
   connections: {
     sqlite: {
       client: 'sqlite3',

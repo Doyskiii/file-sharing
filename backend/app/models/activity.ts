@@ -71,6 +71,9 @@ export default class Activity extends BaseModel {
   @column()
   declare userAgent: string | null
 
+  @column()
+  declare metadata: Record<string, any> | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

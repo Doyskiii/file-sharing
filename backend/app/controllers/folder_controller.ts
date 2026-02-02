@@ -69,14 +69,21 @@ export default class FolderController {
   }
 
   /**
-   * GET /folders - List user's folders
+   * GET /folders - List user's folders (admin sees all)
    */
   async index({ response, auth, request }: HttpContext) {
     try {
       const user = auth.user!
+      await user.load('roles')
+      const isSuperadmin = user.roles.some(role => role.name === 'Superadmin')
+
       const parentId = request.input('parentId')
 
-      let query = Folder.query().where('owner_id', user.id)
+      let query = Folder.query()
+      // Only filter by owner if not superadmin
+      if (!isSuperadmin) {
+        query = query.where('owner_id', user.id)
+      }
 
       // Filter by parent folder if provided
       if (parentId !== undefined) {

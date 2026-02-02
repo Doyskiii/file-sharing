@@ -2,7 +2,7 @@ import axios, { InternalAxiosRequestConfig } from "axios";
 import { toast } from "sonner";
 
 const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3333',
+    baseURL: '/api',
     withCredentials: false,
 })
 

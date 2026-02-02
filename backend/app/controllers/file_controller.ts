@@ -168,6 +168,7 @@ export default class FileController {
           mimeType: file.mimeType,
           size: file.size,
           folderId: file.folderId,
+          username: user.username,
         },
       })
 
@@ -179,18 +180,25 @@ export default class FileController {
   }
 
   /**
-   * GET /files - List user's files
+   * GET /files - List user's files (admin sees all)
    */
   async index({ response, auth, request }: HttpContext) {
     try {
       const user = auth.user!
+      await user.load('roles')
+      const isSuperadmin = user.roles.some(role => role.name === 'Superadmin')
+
       const folderId = request.input('folderId')
       const search = request.input('search')
       const type = request.input('type')
       const sortBy = request.input('sortBy', 'date')
       const sortOrder = request.input('sortOrder', 'desc')
 
-      let query = File.query().where('owner_id', user.id)
+      let query = File.query()
+      // Only filter by owner if not superadmin
+      if (!isSuperadmin) {
+        query = query.where('owner_id', user.id)
+      }
 
       // Filter by folder if provided
       if (folderId !== undefined) {

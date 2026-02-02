@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { FolderIcon, FileIcon, ShareIcon, ActivityIcon, UploadIcon, PlusIcon } from 'lucide-react';
+import { FolderIcon, FileIcon, ShareIcon, ActivityIcon, UploadIcon, PlusIcon, UsersIcon } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/api';
 
@@ -19,6 +19,8 @@ export default function DashboardPage() {
   ]);
 
   const [recentActivities, setRecentActivities] = useState([]);
+
+  const isAdmin = user?.roles?.some(role => role.name === 'Superadmin' || role.name === 'Admin');
 
   useEffect(() => {
     if (user) {
@@ -64,12 +66,25 @@ export default function DashboardPage() {
         // Keep N/A
       }
 
-      setStats([
+      const baseStats = [
         { title: 'Total Files', value: totalFiles.toString(), icon: FileIcon, href: '/files/all-files' },
         { title: 'Total Folders', value: totalFolders.toString(), icon: FolderIcon, href: '/files/all-folders' },
         { title: 'Shared Files', value: totalShared.toString(), icon: ShareIcon, href: '/files/shared/with-me' },
         { title: 'Activities', value: totalActivities, icon: ActivityIcon, href: '/activity/all-activities' },
-      ]);
+      ];
+
+      // Add users stat for admin
+      if (isAdmin) {
+        try {
+          const usersResponse = await api.get('/users');
+          const totalUsers = usersResponse.data.data.length;
+          baseStats.push({ title: 'Total Users', value: totalUsers.toString(), icon: UsersIcon, href: '/admin/users' });
+        } catch (error) {
+          // If can't fetch users, don't add the stat
+        }
+      }
+
+      setStats(baseStats);
     } catch (error) {
       console.error('Failed to fetch stats:', error);
     }
@@ -95,6 +110,7 @@ export default function DashboardPage() {
   const quickActions = [
     { title: 'Upload File', icon: UploadIcon, href: '/files/all-files' }, // Link to files page since no upload page
     { title: 'Create Folder', icon: PlusIcon, href: '/files/all-folders' },
+    ...(isAdmin ? [{ title: 'Manage Users', icon: UsersIcon, href: '/admin/users' }] : []),
   ];
 
   const getActivityDescription = (activity) => {

@@ -18,6 +18,9 @@ router.get('/', async () => {
 })
 
 // Auth routes tanpa prefix
+router.get('/login', async ({ response }) => {
+  return response.methodNotAllowed({ message: 'Login endpoint requires POST method' })
+})
 router.post('/register', '#controllers/auth_controller.register')
 router.post('/login', '#controllers/auth_controller.login')
 router
@@ -35,7 +38,10 @@ router
     router.get('/users/:id', '#controllers/user_controller.show')
     router.put('/users/:id', '#controllers/user_controller.update')
     router.delete('/users/:id', '#controllers/user_controller.destroy')
-    router.post('/users/:id/assign-role', '#controllers/user_controller.assignRole').use(
+    router.post('/users/:id/roles', '#controllers/user_controller.assignRole').use(
+      middleware.can({ permission: 'user:assign-role' })
+    )
+    router.delete('/users/:id/roles/:roleId', '#controllers/user_controller.removeRole').use(
       middleware.can({ permission: 'user:assign-role' })
     )
   })

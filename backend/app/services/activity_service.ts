@@ -208,7 +208,29 @@ export default class ActivityService {
       query.offset(options.offset)
     }
 
-    return await query.preload('file').preload('folder')
+    const activities = await query.preload('user')
+
+    // Conditionally preload file and folder to avoid errors if referenced entities are deleted
+    for (const activity of activities) {
+      if (activity.fileId) {
+        try {
+          await activity.load('file')
+        } catch (error) {
+          // File might be deleted, set to null
+          activity.file = null as any
+        }
+      }
+      if (activity.folderId) {
+        try {
+          await activity.load('folder')
+        } catch (error) {
+          // Folder might be deleted, set to null
+          activity.folder = null as any
+        }
+      }
+    }
+
+    return activities
   }
 
   /**
@@ -231,7 +253,21 @@ export default class ActivityService {
       query.offset(options.offset)
     }
 
-    return await query.preload('user').preload('file')
+    const activities = await query.preload('user')
+
+    // Conditionally preload file to avoid errors if file is deleted
+    for (const activity of activities) {
+      if (activity.fileId) {
+        try {
+          await activity.load('file')
+        } catch (error) {
+          // File might be deleted, set to null
+          activity.file = null as any
+        }
+      }
+    }
+
+    return activities
   }
 
   /**
@@ -271,7 +307,29 @@ export default class ActivityService {
       query.offset(options.offset)
     }
 
-    return await query.preload('user').preload('file').preload('folder')
+    const activities = await query.preload('user')
+
+    // Conditionally preload file and folder to avoid errors if referenced entities are deleted
+    for (const activity of activities) {
+      if (activity.fileId) {
+        try {
+          await activity.load('file')
+        } catch (error) {
+          // File might be deleted, set to null
+          activity.file = null as any
+        }
+      }
+      if (activity.folderId) {
+        try {
+          await activity.load('folder')
+        } catch (error) {
+          // Folder might be deleted, set to null
+          activity.folder = null as any
+        }
+      }
+    }
+
+    return activities
   }
 
   /**

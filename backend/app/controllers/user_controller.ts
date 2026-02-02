@@ -69,19 +69,9 @@ export default class UserController {
       const payload = await request.validateUsing(updateUserValidator)
       user.merge(payload)
       await user.save()
-      await user.load('roles')
+  await user.load('roles')
 
-      // Log user update activity
-      await ActivityService.logFromContext(ctx, 'user:update', {
-        metadata: {
-          userId: userId,
-          username: user.username,
-          email: user.email,
-          changes: payload,
-        },
-      })
-
-      return response.ok(user)
+  return response.ok(user)
     } catch (error) {
       return response.internalServerError({ message: 'Failed to update user', error })
     }
@@ -159,6 +149,52 @@ export default class UserController {
       return response.status(200).send({ message: 'Role assigned successfully', user: user, role: role });
     } catch (error) {
       return response.internalServerError({ message: 'Failed to assign role', error });
+    }
+  }
+
+  // DELETE remove role for user by id
+  async removeRole(ctx: HttpContext) {
+    const { params, response } = ctx
+    try {
+      const userId = parseInt(params.id)
+      const roleId = parseInt(params.roleId)
+      if (isNaN(userId) || isNaN(roleId)) {
+        return response.badRequest({ message: 'Invalid user ID or role ID' })
+      }
+
+      // Validasi: Pastikan user dan role ada
+      const user = await User.find(userId);
+      const role = await Role.find(roleId);
+      if (!user || !role) {
+        return response.status(404).send({ error: 'User or Role not found' });
+      }
+
+      // Cek apakah role di-assign
+      const existingRole = await user.related('roles').query().where('roles.id', roleId).first();
+      if (!existingRole) {
+        return response.status(400).send({ error: 'Role not assigned to this user' });
+      }
+
+      // Hapus relasi dengan detach melalui relasi manyToMany
+      await user.related('roles').detach([roleId]);
+
+      // Preload roles on user before returning
+      await user.load('roles');
+
+      // Log role removal activity
+      await ActivityService.logFromContext(ctx, 'role:remove', {
+        metadata: {
+          userId: userId,
+          roleId: roleId,
+          username: user.username,
+          roleName: role.name,
+        },
+      })
+
+      // Return response
+      return response.status(200).send({ message: 'Role removed successfully', user: user, role: role });
+    } catch (error) {
+      return response.internalServerError({ message: 'Failed to remove role', error });
     }
   }
 }

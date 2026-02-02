@@ -25,13 +25,13 @@ export default class AuthController {
       })
 
       // Log login activity
-      // await ActivityService.logAuth(
-      //   user.id,
-      //   'auth:login',
-      //   request.ip(),
-      //   request.header('user-agent'),
-      //   { email: user.email }
-      // )
+      await ActivityService.logAuth(
+        user.id,
+        'auth:login',
+        request.ip(),
+        request.header('user-agent'),
+        { email: user.email, username: user.username }
+      )
 
       // Load roles for response
       await user.load('roles')
@@ -79,13 +79,13 @@ export default class AuthController {
       })
 
       // Log registration activity
-      // await ActivityService.logAuth(
-      //   user.id,
-      //   'auth:register',
-      //   request.ip(),
-      //   request.header('user-agent'),
-      //   { email: user.email, username: user.username }
-      // )
+      await ActivityService.logAuth(
+        user.id,
+        'auth:register',
+        request.ip(),
+        request.header('user-agent'),
+        { email: user.email, username: user.username }
+      )
 
       // Load roles for response
       await user.load('roles')
