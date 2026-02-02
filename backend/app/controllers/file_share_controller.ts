@@ -255,7 +255,7 @@ export default class FileShareController {
         .preload('owner')
         .orderBy('created_at', 'desc')
 
-      return response.ok(shares)
+      return response.ok({ data: shares })
     } catch (error) {
       return response.internalServerError({ message: 'Failed to fetch received shares', error })
     }

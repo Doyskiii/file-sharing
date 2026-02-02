@@ -27,6 +27,7 @@ interface FileUploadDialogProps {
   onOpenChange: (open: boolean) => void;
   onUploadComplete?: () => void;
   folderId?: number | null;
+  accept?: string;
 }
 
 interface UploadFile {
@@ -41,6 +42,7 @@ export function FileUploadDialog({
   onOpenChange,
   onUploadComplete,
   folderId = null,
+  accept = "*/*",
 }: FileUploadDialogProps) {
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -93,6 +95,8 @@ export function FileUploadDialog({
     if (files.length === 0) return;
 
     setIsUploading(true);
+    let successCount = 0;
+    let errorCount = 0;
 
     try {
       // Upload files sequentially to avoid overwhelming the server
@@ -137,7 +141,7 @@ export function FileUploadDialog({
             idx === i ? { ...f, progress: 100, status: 'completed' as const } : f
           ));
 
-          toast.success(`"${uploadFile.file.name}" uploaded successfully`);
+          successCount++;
 
         } catch (error: any) {
           // Update to error
@@ -149,8 +153,17 @@ export function FileUploadDialog({
             } : f
           ));
 
-          toast.error(`Failed to upload "${uploadFile.file.name}"`);
+          errorCount++;
         }
+      }
+
+      // Show summary toast
+      if (successCount > 0 && errorCount === 0) {
+        toast.success(`Successfully uploaded ${successCount} file${successCount !== 1 ? 's' : ''}`);
+      } else if (errorCount > 0 && successCount === 0) {
+        toast.error(`Failed to upload ${errorCount} file${errorCount !== 1 ? 's' : ''}`);
+      } else if (successCount > 0 && errorCount > 0) {
+        toast.warning(`Uploaded ${successCount} file${successCount !== 1 ? 's' : ''}, failed ${errorCount} file${errorCount !== 1 ? 's' : ''}`);
       }
 
       // Call completion callback
@@ -232,7 +245,7 @@ export function FileUploadDialog({
               multiple
               onChange={handleFileSelect}
               className="hidden"
-              accept="*/*"
+              accept={accept}
             />
           </div>
 

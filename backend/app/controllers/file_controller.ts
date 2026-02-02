@@ -261,7 +261,7 @@ export default class FileController {
         .preload('owner')
         .preload('folder')
 
-      return response.ok(files)
+      return response.ok({ data: files })
     } catch (error) {
       return response.internalServerError({ message: 'Failed to fetch files', error })
     }

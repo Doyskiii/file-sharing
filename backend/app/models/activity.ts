@@ -4,6 +4,7 @@ import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 
 import User from './user.js'
 import File from './file.js'
+import Folder from './folder.js'
 
 export type ActivityAction =
   // Auth activities
@@ -59,6 +60,9 @@ export default class Activity extends BaseModel {
   declare fileId: number | null
 
   @column()
+  declare folderId: number | null
+
+  @column()
   declare action: ActivityAction
 
   @column()
@@ -80,4 +84,9 @@ export default class Activity extends BaseModel {
     foreignKey: 'fileId',
   })
   declare file: BelongsTo<typeof File>
+
+  @belongsTo(() => Folder, {
+    foreignKey: 'folderId',
+  })
+  declare folder: BelongsTo<typeof Folder>
 }

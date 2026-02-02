@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import ActivityService from '#services/activity_service'
+import Activity from '#models/activity'
 import type { ActivityAction } from '#models/activity'
 
 export default class ActivityController {
@@ -65,11 +66,26 @@ export default class ActivityController {
         endDate,
       })
 
+      // Get total count for meta
+      const totalQuery = Activity.query().where('user_id', user.id)
+      if (action) {
+        totalQuery.where('action', action)
+      }
+      if (startDate) {
+        totalQuery.where('created_at', '>=', startDate)
+      }
+      if (endDate) {
+        totalQuery.where('created_at', '<=', endDate)
+      }
+      const totalResult = await totalQuery.count('* as total')
+      const total = totalResult[0]?.$extras?.total || 0
+
       return response.ok({
         data: activities,
         meta: {
           page,
           limit,
+          total,
         },
       })
     } catch (error) {

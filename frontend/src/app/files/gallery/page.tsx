@@ -12,8 +12,8 @@ import {
   ListIcon,
   UploadIcon
 } from 'lucide-react';
-import Link from 'next/link';
 import { toast } from 'sonner';
+import { FileUploadDialog } from '@/components/dialogs/file-upload-dialog';
 
 interface File {
   id: number;
@@ -31,6 +31,7 @@ export default function GalleryPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchImages();
@@ -60,6 +61,10 @@ export default function GalleryPage() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const handleUploadComplete = () => {
+    fetchImages(); // Refresh the image list
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -87,12 +92,10 @@ export default function GalleryPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/files/all-files">
-            <Button variant="outline">
-              <UploadIcon className="h-4 w-4 mr-2" />
-              Upload Images
-            </Button>
-          </Link>
+          <Button variant="outline" onClick={() => setUploadDialogOpen(true)}>
+            <UploadIcon className="h-4 w-4 mr-2" />
+            Upload Images
+          </Button>
         </div>
       </div>
 
@@ -207,6 +210,14 @@ export default function GalleryPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* File Upload Dialog */}
+      <FileUploadDialog
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        onUploadComplete={handleUploadComplete}
+        accept="image/*"
+      />
     </div>
   );
 }

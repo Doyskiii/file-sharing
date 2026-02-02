@@ -94,7 +94,7 @@ export default class FolderController {
         .withCount('files')
         .orderBy('name', 'asc')
 
-      return response.ok(folders)
+      return response.ok({ data: folders })
     } catch (error) {
       return response.internalServerError({ message: 'Failed to fetch folders', error })
     }
